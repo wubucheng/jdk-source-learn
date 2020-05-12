@@ -111,6 +111,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * Default initial capacity.
+     * 初始数组大小
      */
     private static final int DEFAULT_CAPACITY = 10;
 
@@ -136,7 +137,7 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * The size of the ArrayList (the number of elements it contains).
-     *
+     * 当前数组大小，非线程安全
      * @serial
      */
     private int size;
@@ -179,6 +180,7 @@ public class ArrayList<E> extends AbstractList<E>
         if ((size = elementData.length) != 0) {
             // c.toArray might (incorrectly) not return Object[] (see 6260652)
             if (elementData.getClass() != Object[].class)
+                // 判断数组元素类型
                 elementData = Arrays.copyOf(elementData, size, Object[].class);
         } else {
             // replace with empty array.
@@ -221,6 +223,10 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
+        /*
+         *   如果是使用无参构造函数进行初始化，那么elementData与DEFAULTCAPACITY_EMPTY_ELEMENTDATA相等，此时容量为10
+         *
+         */
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
@@ -232,10 +238,12 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private void ensureExplicitCapacity(int minCapacity) {
+        // 记录修改次数
         modCount++;
 
         // overflow-conscious code
         if (minCapacity - elementData.length > 0)
+            // 需要的容量比当前数组长度大才进行扩容
             grow(minCapacity);
     }
 
@@ -244,6 +252,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
      * OutOfMemoryError: Requested array size exceeds VM limit
+     * 减8是为了防止溢出：虚拟机在阵列中保留一些头信息，防止内存溢出
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
@@ -256,7 +265,10 @@ public class ArrayList<E> extends AbstractList<E>
     private void grow(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
+        // 扩容后大小是原来容量的1.5倍
         int newCapacity = oldCapacity + (oldCapacity >> 1);
+        // 下面这几行是为了防止容量大小越界
+        // 新容量大小比最小容量要小，那么新容量即为最小容量，场景是使用无参构造函数进行初始化
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;
         if (newCapacity - MAX_ARRAY_SIZE > 0)
@@ -459,6 +471,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 添加数据时先进行扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size++] = e;
         return true;
@@ -468,14 +481,15 @@ public class ArrayList<E> extends AbstractList<E>
      * Inserts the specified element at the specified position in this
      * list. Shifts the element currently at that position (if any) and
      * any subsequent elements to the right (adds one to their indices).
-     *
+     *  指定元素插入元素
      * @param index index at which the specified element is to be inserted
      * @param element element to be inserted
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
+        // 校验index合法性
         rangeCheckForAdd(index);
-
+        // 判断是否扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         System.arraycopy(elementData, index, elementData, index + 1,
                          size - index);
@@ -496,9 +510,11 @@ public class ArrayList<E> extends AbstractList<E>
         rangeCheck(index);
 
         modCount++;
+        // 从数组中查询出要删除的数据
         E oldValue = elementData(index);
 
         int numMoved = size - index - 1;
+        // 如果这个值大于0 说明后续有元素需要左移
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
                              numMoved);
@@ -516,7 +532,7 @@ public class ArrayList<E> extends AbstractList<E>
      * (if such an element exists).  Returns <tt>true</tt> if this list
      * contained the specified element (or equivalently, if this list
      * changed as a result of the call).
-     *
+     * 删除指定元素，list是允许存储null值的，因此也可以删除null值
      * @param o element to be removed from this list, if present
      * @return <tt>true</tt> if this list contained the specified element
      */
