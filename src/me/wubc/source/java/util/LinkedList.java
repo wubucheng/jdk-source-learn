@@ -121,12 +121,14 @@ public class LinkedList<E>
 
     /**
      * Links e as first element.
+     * 从头部增加元素
      */
     private void linkFirst(E e) {
         final Node<E> f = first;
         final Node<E> newNode = new Node<>(null, e, f);
         first = newNode;
         if (f == null)
+            // 原LinkedList为空，则新节点同为首节点和尾节点
             last = newNode;
         else
             f.prev = newNode;
@@ -136,12 +138,14 @@ public class LinkedList<E>
 
     /**
      * Links e as last element.
+     * 从尾部增加元素
      */
     void linkLast(E e) {
         final Node<E> l = last;
         final Node<E> newNode = new Node<>(l, e, null);
         last = newNode;
         if (l == null)
+            // 如果是一个空的LinkedList,那么插入的节点即为头节点
             first = newNode;
         else
             l.next = newNode;
@@ -167,6 +171,7 @@ public class LinkedList<E>
 
     /**
      * Unlinks non-null first node f.
+     * 删除首节点
      */
     private E unlinkFirst(Node<E> f) {
         // assert f == first && f != null;
@@ -562,6 +567,7 @@ public class LinkedList<E>
 
     /**
      * Returns the (non-null) Node at the specified element index.
+     * 使用二分法进行查找
      */
     Node<E> node(int index) {
         // assert isElementIndex(index);
