@@ -232,6 +232,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The default initial capacity - MUST be a power of two.
+     * 初始容量大小
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
@@ -239,11 +240,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     * 最大容量大小
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
+     * 负载因子默认值
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
@@ -254,6 +257,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     * 桶上链表长度大于8，则链表转换成红黑树
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -261,6 +265,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
+     * 当红黑树的大小小于等于 6 时，红黑树会转化成链表
      */
     static final int UNTREEIFY_THRESHOLD = 6;
 
@@ -626,21 +631,27 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                    boolean evict) {
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         if ((tab = table) == null || (n = tab.length) == 0)
+            // 数组为空，使用 resize 方法初始化
             n = (tab = resize()).length;
         if ((p = tab[i = (n - 1) & hash]) == null)
+            // 索引位置元素为空，则生成新的节点到该索引位置
             tab[i] = newNode(hash, key, value, null);
         else {
+            // 有值，处理hash冲突
             Node<K,V> e; K k;
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 e = p;
             else if (p instanceof TreeNode)
+                // 如果是红黑树，则以红黑树的方式新增
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
+                        // p是尾节点，把新节点放到链表尾部
                         p.next = newNode(hash, key, value, null);
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            // 转换成红黑树
                             treeifyBin(tab, hash);
                         break;
                     }
@@ -653,6 +664,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
+                    // 当 onlyIfAbsent 为 false 时，才会覆盖值
                     e.value = value;
                 afterNodeAccess(e);
                 return oldValue;
@@ -660,6 +672,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
         ++modCount;
         if (++size > threshold)
+            // 超过阈值，进行扩容
             resize();
         afterNodeInsertion(evict);
         return null;
@@ -751,6 +764,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Replaces all linked nodes in bin at index for given hash unless
      * table is too small, in which case resizes instead.
+     * 当链表长度大于等于 8，并且整个数组大小大于 64 时，才会转成红黑树
      */
     final void treeifyBin(Node<K,V>[] tab, int hash) {
         int n, index; Node<K,V> e;
@@ -1973,14 +1987,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                        int h, K k, V v) {
             Class<?> kc = null;
             boolean searched = false;
+            // 找到根节点
             TreeNode<K,V> root = (parent != null) ? root() : this;
             for (TreeNode<K,V> p = root;;) {
+                // 自旋
                 int dir, ph; K pk;
                 if ((ph = p.hash) > h)
                     dir = -1;
                 else if (ph < h)
                     dir = 1;
                 else if ((pk = p.key) == k || (k != null && k.equals(pk)))
+                    // 树中已存在该值
                     return p;
                 else if ((kc == null &&
                           (kc = comparableClassFor(k)) == null) ||
