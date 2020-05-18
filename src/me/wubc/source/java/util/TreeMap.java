@@ -568,6 +568,7 @@ public class TreeMap<K,V>
                 cmp = k.compareTo(t.key);
                 if (cmp < 0)
                     t = t.left;
+
                 else if (cmp > 0)
                     t = t.right;
                 else
