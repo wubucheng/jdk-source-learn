@@ -115,15 +115,19 @@ public class TreeMap<K,V>
     /**
      * The comparator used to maintain order in this tree map, or
      * null if it uses the natural ordering of its keys.
-     *
+     * 如果有外部比较器过来，则使用外部比价器，否则使用自己实现compareTo 方法
      * @serial
      */
     private final Comparator<? super K> comparator;
 
+    /**
+     * 红黑树根节点
+     */
     private transient Entry<K,V> root;
 
     /**
      * The number of entries in the tree
+     * 红黑树节点个数
      */
     private transient int size = 0;
 
@@ -548,6 +552,7 @@ public class TreeMap<K,V>
         Comparator<? super K> cpr = comparator;
         if (cpr != null) {
             do {
+                // 寻找合适的插入位置
                 parent = t;
                 cmp = cpr.compare(key, t.key);
                 if (cmp < 0)
@@ -575,6 +580,8 @@ public class TreeMap<K,V>
                     return t.setValue(value);
             } while (t != null);
         }
+        // 如果前没有找到相等的节点，则下面逻辑会执行
+        // 最后判断插入的节点位置，以及插入新节点
         Entry<K,V> e = new Entry<>(key, value, parent);
         if (cmp < 0)
             parent.left = e;

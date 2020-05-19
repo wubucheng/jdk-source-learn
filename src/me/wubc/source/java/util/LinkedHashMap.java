@@ -190,6 +190,7 @@ public class LinkedHashMap<K,V>
      * HashMap.Node subclass for normal LinkedHashMap entries.
      */
     static class Entry<K,V> extends HashMap.Node<K,V> {
+        // 与HashMap的节点相比较，增加了两个属性
         Entry<K,V> before, after;
         Entry(int hash, K key, V value, Node<K,V> next) {
             super(hash, key, value, next);
@@ -211,7 +212,7 @@ public class LinkedHashMap<K,V>
     /**
      * The iteration ordering method for this linked hash map: <tt>true</tt>
      * for access-order, <tt>false</tt> for insertion-order.
-     *
+     * 设置访问顺序： true安装访问顺序，false按照 插入顺序访问
      * @serial
      */
     final boolean accessOrder;
@@ -296,7 +297,9 @@ public class LinkedHashMap<K,V>
 
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
+        // removeEldestEntry控制删除策略
         if (evict && (first = head) != null && removeEldestEntry(first)) {
+            // 删除队头元素
             K key = first.key;
             removeNode(hash(key), key, null, false, true);
         }
@@ -440,6 +443,7 @@ public class LinkedHashMap<K,V>
         if ((e = getNode(hash(key), key)) == null)
             return null;
         if (accessOrder)
+            // 如果设置了LRU策略，将当前key已到链表尾部
             afterNodeAccess(e);
         return e.value;
     }
