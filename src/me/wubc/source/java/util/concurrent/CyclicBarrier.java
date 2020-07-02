@@ -201,28 +201,35 @@ public class CyclicBarrier {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 表示当前“代”
             final Generation g = generation;
-
+            // 判断屏障是否损坏
             if (g.broken)
                 throw new BrokenBarrierException();
 
             if (Thread.interrupted()) {
+                // 进行破坏屏障
                 breakBarrier();
                 throw new InterruptedException();
             }
 
             int index = --count;
             if (index == 0) {  // tripped
+                // 表示所有线程都达到屏障了
                 boolean ranAction = false;
                 try {
                     final Runnable command = barrierCommand;
                     if (command != null)
+                        // 那么将会回调执行CyclicBarries的run方法
                         command.run();
+                    // 可以认为执行栅栏任务成功了
                     ranAction = true;
+                    // 唤醒所有线程
                     nextGeneration();
                     return 0;
                 } finally {
                     if (!ranAction)
+                        // 执行失败，则破坏屏障
                         breakBarrier();
                 }
             }
@@ -230,12 +237,15 @@ public class CyclicBarrier {
             // loop until tripped, broken, interrupted, or timed out
             for (;;) {
                 try {
+                    // timed这个值是由构造方法决定的，如果是使用有超时设置的构造方法，那么该值为true
                     if (!timed)
                         trip.await();
                     else if (nanos > 0L)
+                        // 否则等待指定的时长
                         nanos = trip.awaitNanos(nanos);
                 } catch (InterruptedException ie) {
                     if (g == generation && ! g.broken) {
+                        // 当前代，且屏障没有被破坏
                         breakBarrier();
                         throw ie;
                     } else {
@@ -250,6 +260,7 @@ public class CyclicBarrier {
                     throw new BrokenBarrierException();
 
                 if (g != generation)
+                    // 判断当前CyclicBarrier是不是这代的，不是则直接返回下标
                     return index;
 
                 if (timed && nanos <= 0L) {

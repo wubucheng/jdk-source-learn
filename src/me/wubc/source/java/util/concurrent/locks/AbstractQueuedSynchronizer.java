@@ -882,17 +882,22 @@ public abstract class AbstractQueuedSynchronizer
      */
     private void doAcquireInterruptibly(int arg)
         throws InterruptedException {
+        // 在AQS阻塞队列中添加一个节点
         final Node node = addWaiter(Node.EXCLUSIVE);
         boolean failed = true;
         try {
+            // 自璇
             for (;;) {
+                // 获取前驱节点
                 final Node p = node.predecessor();
+                // 如果前驱节点是头结点并且获取锁成功，则将新添加的节点作为头节点，原来的头节点移除掉
                 if (p == head && tryAcquire(arg)) {
                     setHead(node);
                     p.next = null; // help GC
                     failed = false;
                     return;
                 }
+                // 如果失败后需要挂起
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     parkAndCheckInterrupt())
                     throw new InterruptedException();
@@ -1216,9 +1221,12 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final void acquireInterruptibly(int arg)
             throws InterruptedException {
+        // 如果线程被中断，则直接抛出异常
         if (Thread.interrupted())
             throw new InterruptedException();
+        // 尝试获取资源
         if (!tryAcquire(arg))
+            // 调用AQS的可被中断的方法
             doAcquireInterruptibly(arg);
     }
 
@@ -1516,6 +1524,7 @@ public abstract class AbstractQueuedSynchronizer
         Node t = tail; // Read fields in reverse initialization order
         Node h = head;
         Node s;
+        // 头结点与为节点不相等，并且第一个元素不是当前元素
         return h != t &&
             ((s = h.next) == null || s.thread != Thread.currentThread());
     }
