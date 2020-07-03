@@ -1200,6 +1200,7 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      */
     public final void acquire(int arg) {
+        // 该tryAcquire方法同样是掉用其的Sync内部类实现
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();
@@ -1266,9 +1267,11 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryRelease}
      */
     public final boolean release(int arg) {
+        // 调用子类的tryRelease方法
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
+                // 唤醒后继节点
                 unparkSuccessor(h);
             return true;
         }
@@ -1287,7 +1290,9 @@ public abstract class AbstractQueuedSynchronizer
      *        and can represent anything you like.
      */
     public final void acquireShared(int arg) {
+        // 调用的是具体子类的方法
         if (tryAcquireShared(arg) < 0)
+            // 调用的是AQS的方法
             doAcquireShared(arg);
     }
 

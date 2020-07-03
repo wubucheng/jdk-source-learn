@@ -258,20 +258,26 @@ public class ReentrantReadWriteLock
          * The lower one representing the exclusive (writer) lock hold count,
          * and the upper the shared (reader) hold count.
          */
-
+        // 共享锁偏移量
         static final int SHARED_SHIFT   = 16;
+        // 共享锁（读锁）状态单位值65536
         static final int SHARED_UNIT    = (1 << SHARED_SHIFT);
+        // 最大重入次数
         static final int MAX_COUNT      = (1 << SHARED_SHIFT) - 1;
+        // 排它锁（写锁）掩码，二进制，15个1
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
 
         /** Returns the number of shared holds represented in count  */
+        // 返回读锁线程数
         static int sharedCount(int c)    { return c >>> SHARED_SHIFT; }
         /** Returns the number of exclusive holds represented in count  */
+        // 返回写锁可重入个数
         static int exclusiveCount(int c) { return c & EXCLUSIVE_MASK; }
 
         /**
          * A counter for per-thread read hold counts.
          * Maintained as a ThreadLocal; cached in cachedHoldCounter
+         * 每个线程读锁的重入次数
          */
         static final class HoldCounter {
             int count = 0;
@@ -311,6 +317,7 @@ public class ReentrantReadWriteLock
          * <p>Accessed via a benign data race; relies on the memory
          * model's final field and out-of-thin-air guarantees.
          */
+        // 最后一个获取读锁的线程获取读锁的可重入次数
         private transient HoldCounter cachedHoldCounter;
 
         /**
@@ -331,7 +338,9 @@ public class ReentrantReadWriteLock
          * <p>This allows tracking of read holds for uncontended read
          * locks to be very cheap.
          */
+        // 第一个获取到锁的线程
         private transient Thread firstReader = null;
+        // 第一个获取到读锁的线程获取读锁的可重入次数
         private transient int firstReaderHoldCount;
 
         Sync() {
@@ -367,12 +376,16 @@ public class ReentrantReadWriteLock
          */
 
         protected final boolean tryRelease(int releases) {
+            // 判断释放锁的是否是锁的持有线程
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
+            // 状态值减一
             int nextc = getState() - releases;
             boolean free = exclusiveCount(nextc) == 0;
             if (free)
+                // 如果未0则成功释放锁
                 setExclusiveOwnerThread(null);
+            // 否则只是进行简单的减一
             setState(nextc);
             return free;
         }
@@ -391,14 +404,19 @@ public class ReentrantReadWriteLock
              */
             Thread current = Thread.currentThread();
             int c = getState();
+            // 获取可重入次数
             int w = exclusiveCount(c);
             if (c != 0) {
+                // 不为0则写锁或读锁已经被其他线程获取了
                 // (Note: if c != 0 and w == 0 then shared count != 0)
+                //  c!=0且w为0说明低16位为0，高16位不为0，这就代表了读锁已经被获取了，w不为0，代表写锁被获取了
                 if (w == 0 || current != getExclusiveOwnerThread())
+                    // 读锁别获取了或者当前线程不是写锁持有者，则返回false
                     return false;
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
+                // 设置可重入次数
                 setState(c + acquires);
                 return true;
             }
@@ -414,6 +432,7 @@ public class ReentrantReadWriteLock
             if (firstReader == current) {
                 // assert firstReaderHoldCount > 0;
                 if (firstReaderHoldCount == 1)
+                    // 将记录第一个获取到读锁的线程的firstReader置为null
                     firstReader = null;
                 else
                     firstReaderHoldCount--;
@@ -429,6 +448,7 @@ public class ReentrantReadWriteLock
                 }
                 --rh.count;
             }
+            // 自旋释放锁
             for (;;) {
                 int c = getState();
                 int nextc = c - SHARED_UNIT;
@@ -463,19 +483,26 @@ public class ReentrantReadWriteLock
              */
             Thread current = Thread.currentThread();
             int c = getState();
+            // 判断写锁是否被占用,如果获取到写锁的不是当前线程则返回-1
             if (exclusiveCount(c) != 0 &&
                 getExclusiveOwnerThread() != current)
                 return -1;
+            // 获取读锁持有的线程数
             int r = sharedCount(c);
+            // 尝试获取锁
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
                 compareAndSetState(c, c + SHARED_UNIT)) {
                 if (r == 0) {
+                    // r等于0表示读锁是第一次被获取，则设置当前线程为第一个获取到锁的线程
                     firstReader = current;
+                    // 设置读锁的可重入次数为1
                     firstReaderHoldCount = 1;
                 } else if (firstReader == current) {
+                    // 如果当前线程是第一个获取到读锁的线程，则重入次数加一
                     firstReaderHoldCount++;
                 } else {
+                    // 记录其他线程获取读锁的可重入数或记录最后一个获取读锁的线程
                     HoldCounter rh = cachedHoldCounter;
                     if (rh == null || rh.tid != getThreadId(current))
                         cachedHoldCounter = rh = readHolds.get();
@@ -557,6 +584,7 @@ public class ReentrantReadWriteLock
             int c = getState();
             if (c != 0) {
                 int w = exclusiveCount(c);
+                //  c!=0且w为0说明低16位为0，高16位不为0，这就代表了读锁已经被获取了，w不为0，代表写锁被获取了
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
                 if (w == MAX_COUNT)
