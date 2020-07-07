@@ -324,13 +324,16 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 检查元素是否为空
         checkNotNull(e);
+        // 插入尾部的元素
         final Node<E> newNode = new Node<E>(e);
-
+        // 从尾节点开始循环
         for (Node<E> t = tail, p = t;;) {
             Node<E> q = p.next;
             if (q == null) {
                 // p is last node
+                // 通过CAS将队列原最后一个元素的next指向新节点
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
@@ -346,9 +349,11 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
+                // 由于自引用问题需要重新找新的head
                 p = (t != (t = tail)) ? t : head;
             else
                 // Check for tail updates after two hops.
+                // 寻找尾节点
                 p = (p != t && t != (t = tail)) ? t : q;
         }
     }
@@ -356,21 +361,26 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     public E poll() {
         restartFromHead:
         for (;;) {
+            // 从队头获取元素
             for (Node<E> h = head, p = h, q;;) {
                 E item = p.item;
-
+                // 当前节点有值则设置为null
                 if (item != null && p.casItem(item, null)) {
                     // Successful CAS is the linearization point
                     // for item to be removed from this queue.
                     if (p != h) // hop two nodes at a time
+                        // 从链表中移除
                         updateHead(h, ((q = p.next) != null) ? q : p);
                     return item;
                 }
+                // 当前队列为空则返回null
                 else if ((q = p.next) == null) {
                     updateHead(h, p);
                     return null;
                 }
+                // 当前节点被自引用了，重新寻找队列头节点
                 else if (p == q)
+                    // 发现头结点被修改，通过goto预缴跳出外层循环重新获取头结点
                     continue restartFromHead;
                 else
                     p = q;
@@ -402,6 +412,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * first(), but that would cost an extra volatile read of item,
      * and the need to add a retry loop to deal with the possibility
      * of losing a race to a concurrent poll().
+     * 获取第一个元素
      */
     Node<E> first() {
         restartFromHead:
@@ -490,6 +501,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             for (Node<E> p = first(); p != null; pred = p, p = next) {
                 boolean removed = false;
                 E item = p.item;
+                // 使用CAS设置为null
                 if (item != null) {
                     if (!o.equals(item)) {
                         next = succ(p);
@@ -497,8 +509,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                     }
                     removed = p.casItem(item, null);
                 }
-
+                // 获取next节点
                 next = succ(p);
+                // 前驱节点和next节点都不为空，则链接前驱节点到next节点
                 if (pred != null && next != null) // unlink
                     pred.casNext(p, next);
                 if (removed)
